@@ -1,5 +1,6 @@
 import cv2
 import h5py
+import imutils
 import numpy as np
 
 file_path = "./resources/SynthText.h5"
@@ -17,12 +18,16 @@ for index in np.random.choice(973, 5):
     charBB = db['data'][im].attrs['charBB']
     wordBB = db['data'][im].attrs['wordBB']
 
-    pts = np.swapaxes(np.array(charBB, np.int32), 0, 2)
+    pts = np.swapaxes(charBB, 0, 2)
 
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print(pts)
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     for char in pts:
+        original_char = char.copy()
+        char = np.asarray(char, np.int32)
+        print("char[0]")
+        print(char[0])
         orig = cv2.polylines(img.copy(), np.asarray([char]), True, color=(0, 0, 255))
         cv2.imshow("original", orig)
 
@@ -40,14 +45,33 @@ for index in np.random.choice(973, 5):
 
         ## (3) do bit-op
         dst = cv2.bitwise_and(cropped, cropped, mask=mask)
-        cv2.imshow("dst", dst)
+        # cv2.imshow("dst", dst)
 
-        ## (4) add the white background
-        bg = np.ones_like(cropped, np.uint8) * 255
+        ## Rotate without cutoff
 
-        cv2.bitwise_not(bg, bg, mask=mask)
-        dst2 = bg + dst
-        cv2.imshow("dst2", dst2)
+        # calc angle
+        x0, y0 = original_char[0]
+        x1, y1 = original_char[1]
+        x3, y3 = original_char[-1]
+
+        cv2.circle(orig, (int(x0), int(y0)), 8, color=(0, 255, 0))
+        cv2.circle(orig, (int(x1), int(y1)), 8, color=(0, 180, 0))
+        cv2.circle(orig, (int(x3), int(y3)), 8, color=(0, 90, 0))
+        cv2.imshow("original", orig)
+
+        horizontal_angle = np.rad2deg(np.arctan((y1 - y0) / (x1 - x0))) if x1 != x0 else 0
+        vertical_angle = np.rad2deg(np.arctan((x0 - x3) / (y0 - y3))) if y0 != y3 else 0
+        print("horizontal_angle")
+        print(horizontal_angle)
+        print("vertical_angle")
+        print(vertical_angle)
+        angle = max(horizontal_angle, vertical_angle, key=abs)
+        print("angle")
+        print(angle)
+
+        rotated = imutils.rotate_bound(dst, angle)
+        cv2.imshow(f"Rotated (Correct {angle})", rotated)
+
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
