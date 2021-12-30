@@ -8,8 +8,10 @@ db = h5py.File(file_path, 'r')
 im_names = list(db["data"].keys())
 
 # for index in range(1, 974):
+
 if True:
-    index = 537
+    index = 200
+
     im = im_names[index]
     print(f"working on image {index} with name {im}")
 
@@ -30,7 +32,7 @@ if True:
         original_char = char.copy()
         char = np.asarray(char, np.int32)
         char = np.where(char > 0, char, 0)
-        orig = cv2.polylines(img.copy(), np.asarray([char]), True, color=(0, 0, 255))
+        # orig = cv2.polylines(img.copy(), np.asarray([char]), True, color=(0, 0, 255))
         # cv2.imshow("original", orig)
 
         ## (1) Crop the bounding rect
@@ -50,9 +52,9 @@ if True:
 
         # Check about use contour
         # cv2.imshow("a", char_image)
-        char_image = cv2.GaussianBlur(char_image, (3, 3), 1)
-        char_image = cv2.Canny(char_image, 100, 200)
-        char_image = cv2.resize(char_image, (char_image.shape[1] * 4, char_image.shape[0] * 4))
+        # char_image = cv2.GaussianBlur(char_image, (3, 3), 1)
+        # char_image = cv2.Canny(char_image, 100, 200)
+        # char_image = cv2.resize(char_image, (char_image.shape[1] * 4, char_image.shape[0] * 4))
         # Add the char letter here
         cv2.imwrite(f"./imgs/image_{index}_{idx}.png", char_image)
 
