@@ -1,3 +1,10 @@
+import os
+os.makedirs("dataset")
+
+for i in range(7):
+  os.makedirs(f"dataset/{i}")
+
+
 import cv2
 import h5py
 import numpy as np
@@ -6,34 +13,46 @@ file_path = "./resources/SynthText.h5"
 db = h5py.File(file_path, 'r')
 
 im_names = list(db["data"].keys())
+font_dict = {
+    b'Roboto': 0,
+    b'Michroma':1,
+    b'Raleway': 2,
+    b'Alex Brush':3,
+    b'Ubuntu Mono': 4,
+    b'Russo One': 5,
+    b'Open Sans':6
+}
 
-# for index in range(1, 974):
 
-if True:
-    index = 200
+
+
+for index in range(973):
+    # if True:
+    #     index = 206
 
     im = im_names[index]
-    print(f"working on image {index} with name {im}")
+    # print(f"working on image {index} with name {im}")
 
     img = db['data'][im][:]
-    # cv2.imshow("Image", img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
     font = db['data'][im].attrs['font']
-    txt = db['data'][im].attrs['txt']
+    font = (list(map(lambda x: font_dict[x], font)))
+    txt = b''.join(db['data'][im].attrs['txt'])
     charBB = db['data'][im].attrs['charBB']
     wordBB = db['data'][im].attrs['wordBB']
 
     pts = np.swapaxes(charBB, 0, 2)
 
+    # np.where(font ,font_dict[str(font)], font)
     for idx, char in enumerate(pts):
-        print(f"index is {idx}")
+        char_txt_val = txt[idx]
+        char_font_val = font[idx]
+
+        # print(f"index is {idx}")
         original_char = char.copy()
         char = np.asarray(char, np.int32)
         char = np.where(char > 0, char, 0)
         # orig = cv2.polylines(img.copy(), np.asarray([char]), True, color=(0, 0, 255))
-        # cv2.imshow("original", orig)
+        # cv2_imshow(orig)
 
         ## (1) Crop the bounding rect
         rect = cv2.boundingRect(char)
@@ -55,11 +74,16 @@ if True:
         # char_image = cv2.GaussianBlur(char_image, (3, 3), 1)
         # char_image = cv2.Canny(char_image, 100, 200)
         # char_image = cv2.resize(char_image, (char_image.shape[1] * 4, char_image.shape[0] * 4))
-        # Add the char letter here
-        cv2.imwrite(f"./imgs/image_{index}_{idx}.png", char_image)
 
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # Add the char letter here
+        # print(f"Image {index} letter num: {idx} with value: {chr(char_txt_val)} and font num: {char_font_val}")
+        # cv2_imshow(char_image)
+        cv2.imwrite(
+            f"./dataset/{char_font_val}/image_{index:03d}_{idx:03d}_char_{char_txt_val:03d}_font_{char_font_val}.png",
+            char_image)
+
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         # ## Rotate without cutoff
         #
@@ -88,8 +112,8 @@ if True:
 
     # words = np.swapaxes(np.array(wordBB, np.int32), 0, 2)
 
-    # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    # print("~~~~~~~~~~~~~~~")
     # print(words)
-    # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    # print("~~~~~~~~~~~~~~~")
     # for word in words:
     #     cv2.polylines(img, np.asarray([word]), True, color=(0, 255, 0))
