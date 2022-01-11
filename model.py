@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import numpy as np
@@ -7,6 +8,9 @@ from tensorflow.keras import layers
 
 print("TensorFlow version:", tf.__version__)
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+physical_devices = tf.config.list_physical_devices("GPU")
+# tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 data_dir = "./dataset"
 
@@ -46,7 +50,7 @@ def decode_char_font_and_image(file_path):
 
 # display_9_images_from_dataset(train_ds)
 
-IMG_SIZE = 180
+IMG_SIZE = 150
 
 resize_and_rescale = tf.keras.Sequential([
     layers.Resizing(IMG_SIZE, IMG_SIZE),
@@ -58,11 +62,11 @@ data_augmentation = tf.keras.Sequential([
     layers.RandomRotation(0.2),
 ])
 
-batch_size = 32
+batch_size = 16
 AUTOTUNE = tf.data.AUTOTUNE
 
 
-def prepare(ds, shuffle=False, augment=False):
+def prepare(ds, shuffle=False, augment=False, multi_input=False):
     # Resize and rescale all datasets.
     ds = ds.map(lambda img, cr, fnt: (resize_and_rescale(img), cr, fnt),
                 num_parallel_calls=AUTOTUNE)
@@ -78,6 +82,10 @@ def prepare(ds, shuffle=False, augment=False):
         ds = ds.map(lambda img, cr, fnt: (data_augmentation(img, training=True), cr, fnt),
                     num_parallel_calls=AUTOTUNE)
 
+    if multi_input:
+        ds = ds.map(lambda img, cr, fnt: ({'image': img, 'char': cr}, fnt))
+    else:
+        ds = ds.map(lambda img, cr, fnt: (img, fnt))
     # Use buffered prefetching on all datasets.
     return ds.prefetch(buffer_size=AUTOTUNE)
 
@@ -91,80 +99,76 @@ train_size = int(image_count * validation_rate)
 train_ds = ds.take(train_size)
 val_ds = ds.skip(train_size)
 
-train_ds = prepare(train_ds, shuffle=True, augment=True)
-val_ds = prepare(val_ds)
+print(f"Trying to prepare {datetime.datetime.now()}")
+train_ds = prepare(train_ds, multi_input=True, shuffle=True, augment=True)
+val_ds = prepare(val_ds, multi_input=True)
+print(f"Finished preparation {datetime.datetime.now()}")
 
-for img, char_val, font_num in train_ds.take(5).as_numpy_iterator():
-    print(f"char_val: {char_val}")
-    # f" = {chr(char_val)}")
-    print(f"font_num: {font_num}")
-    print(f"img: {img}")
+# for img, font_num in train_img_ds.take(5).as_numpy_iterator():
+#     # print(f"char_val: {x[1]}")
+#     # # f" = {chr(char_val)}")
+#     print(f"font_num: {font_num}")
+#     print(f"img: {img}")
 
-cnn = tf.keras.Sequential([
-    layers.Conv2D(16, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(32, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(64, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Flatten(),
-    layers.Dense(128, activation='relu'),
-    layers.Dense(num_classes)
+
+base_model = tf.keras.applications.VGG19(
+    include_top=False,
+    weights="imagenet",
+    input_shape=(150, 150, 3),
+)
+
+base_model.trainable = False
+
+transfer_learning_model = tf.keras.Sequential([
+    layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3)),
+    # resize_and_rescale,
+    # data_augmentation,
+    # PreTrained model
+    base_model,
+    layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(127, activation='relu'),
+    # tf.keras.layers.Dense(num_classes)
 ])
 
-image_input = layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), name='image')
-x = cnn(image_input)
-x = layers.Flatten()(x)
+cnn = tf.keras.Sequential([
+    # hub.KerasLayer(model_handle, trainable=True),
+    tf.keras.layers.Dropout(rate=0.2),
+    tf.keras.layers.Dense(num_classes,
+                          kernel_regularizer=tf.keras.regularizers.l2(0.0001))
+])
 
-char_input = layers.Input(shape=(1,), name='char')
+image_input = layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32, name='image')
+x = transfer_learning_model(image_input)
+# x = layers.Flatten()(x)
+
+char_input = layers.Input(shape=(1,), dtype=tf.float32, name='char')
 
 combined = layers.concatenate([x, char_input])
-combined = layers.Dense(1024)(combined)
-combined = tf.nn.relu(combined)
-combined = layers.Dense(128)(combined)
+combined = layers.Dense(64)(combined)
 combined = tf.nn.relu(combined)
 outputs = layers.Dense(num_classes)(combined)
 outputs = tf.nn.softmax(outputs)
 
 model = tf.keras.Model(inputs=[image_input, char_input], outputs=outputs)
+#
+# model.compile(optimizer='adam',
+#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
+
 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
+dot_img_file = 'model.png'
+tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
+print(transfer_learning_model.summary())
+
 model.fit(
-    {"image": train_ds[0], "char": train_ds[1]},
-    train_ds[2],
-    epoch=2,
-    batch_size=32
+    train_ds,
+    # validation_data=val_ds,
+    epochs=5
 )
 
-print(train_ds)
-# model.fit(train_ds)
+model.save("saved_model")
 
-
-# train_ds = tf.keras.utils.image_dataset_from_directory(
-#   data_dir,
-#   validation_split=0.2,
-#   subset="training",
-#   seed=123,
-#   image_size=(100, 100),
-#   # batch_size=batch_size
-#   )
-#
-# for image_batch, labels_batch in train_ds:
-#   print(image_batch.shape)
-#   print(labels_batch.shape)
-#   break
-#
-# # for element in train_ds[:10]:
-# #   print(element)
-#
-# val_ds = tf.keras.utils.image_dataset_from_directory(
-#   data_dir,
-#   validation_split=0.2,
-#   subset="validation",
-#   seed=123,
-#   image_size=(100, 100),
-#   # batch_size=batch_size
-#   )
