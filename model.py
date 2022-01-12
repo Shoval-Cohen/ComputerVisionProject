@@ -62,7 +62,7 @@ data_augmentation = tf.keras.Sequential([
     layers.RandomRotation(0.2),
 ])
 
-batch_size = 16
+batch_size = 64
 AUTOTUNE = tf.data.AUTOTUNE
 
 
@@ -111,10 +111,10 @@ print(f"Finished preparation {datetime.datetime.now()}")
 #     print(f"img: {img}")
 
 
-base_model = tf.keras.applications.VGG19(
+base_model = tf.keras.applications.Xception(
     include_top=False,
     weights="imagenet",
-    input_shape=(150, 150, 3),
+    input_shape=(IMG_SIZE, IMG_SIZE, 3),
 )
 
 base_model.trainable = False
@@ -142,12 +142,11 @@ x = transfer_learning_model(image_input)
 # x = layers.Flatten()(x)
 
 char_input = layers.Input(shape=(1,), dtype=tf.float32, name='char')
+#
+# combined = layers.concatenate([x, char_input])
+# combined = layers.Dense(64,activation='relu')(combined)
+outputs = layers.Dense(num_classes, activation='softmax')(x)
 
-combined = layers.concatenate([x, char_input])
-combined = layers.Dense(64)(combined)
-combined = tf.nn.relu(combined)
-outputs = layers.Dense(num_classes)(combined)
-outputs = tf.nn.softmax(outputs)
 
 model = tf.keras.Model(inputs=[image_input, char_input], outputs=outputs)
 #
@@ -155,20 +154,27 @@ model = tf.keras.Model(inputs=[image_input, char_input], outputs=outputs)
 #               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
 #               metrics=['accuracy'])
 
+lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+    initial_learning_rate=0.1,
+    decay_steps=10000,
+    decay_rate=0.9)
 
-model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+model.compile(
+    optimizer=tf.keras.optimizers.SGD(learning_rate=lr_schedule),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
+    metrics=['accuracy'])
 
 dot_img_file = 'model.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
+
 print(transfer_learning_model.summary())
+
+print("Let's go!")
 
 model.fit(
     train_ds,
-    # validation_data=val_ds,
-    epochs=5
+    validation_data=val_ds,
+    epochs=10
 )
 
-model.save("saved_model")
-
+model.save("saved_model.h5")

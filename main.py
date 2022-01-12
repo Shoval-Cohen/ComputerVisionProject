@@ -2,8 +2,7 @@ import os
 os.makedirs("dataset")
 
 for i in range(7):
-  os.makedirs(f"dataset/{i}")
-
+    os.makedirs(f"dataset/{i}")
 
 import cv2
 import h5py
@@ -14,21 +13,18 @@ db = h5py.File(file_path, 'r')
 
 im_names = list(db["data"].keys())
 font_dict = {
-    b'Roboto': 0,
-    b'Michroma':1,
-    b'Raleway': 2,
-    b'Alex Brush':3,
-    b'Ubuntu Mono': 4,
-    b'Russo One': 5,
-    b'Open Sans':6
+    b'Raleway': 0,
+    b'Open Sans': 1,
+    b'Roboto': 2,
+    b'Ubuntu Mono': 3,
+    b'Michroma': 4,
+    b'Alex Brush': 5,
+    b'Russo One': 6
 }
 
-
-
-
 for index in range(973):
-    # if True:
-    #     index = 206
+# if True:
+#     index = 352
 
     im = im_names[index]
     # print(f"working on image {index} with name {im}")
@@ -48,26 +44,31 @@ for index in range(973):
         char_font_val = font[idx]
 
         # print(f"index is {idx}")
-        original_char = char.copy()
-        char = np.asarray(char, np.int32)
-        char = np.where(char > 0, char, 0)
-        # orig = cv2.polylines(img.copy(), np.asarray([char]), True, color=(0, 0, 255))
-        # cv2_imshow(orig)
+        char = np.float32( np.where(char > 0, char, 0))
+        # rounded_char = char.copy()
+        # rounded_char = np.asarray(char, np.int32)
+        # orig = cv2.polylines(img.copy(), np.asarray([rounded_char]), True, color=(0, 0, 255))
 
-        ## (1) Crop the bounding rect
-        rect = cv2.boundingRect(char)
-        x, y, w, h = rect
-        cropped = img[y:y + h, x:x + w].copy()
+        dst = np.float32([[0, 0], [150, 0], [150, 150], [0, 150]])
 
-        ## (2) make mask
+        mat = cv2.getPerspectiveTransform(char, dst)
+        char_image = cv2.warpPerspective(img, mat, (150, 150))
 
-        char = char - char.min(axis=0)
 
-        mask = np.zeros(cropped.shape[:2], np.uint8)
-        cv2.drawContours(mask, [char], -1, (255, 255, 255), -1, cv2.LINE_AA)
-
-        ## (3) do bit-op
-        char_image = cv2.bitwise_and(cropped, cropped, mask=mask)
+        # ## (1) Crop the bounding rect
+        # rect = cv2.boundingRect(char)
+        # x, y, w, h = rect
+        # cropped = img[y:y + h, x:x + w].copy()
+        #
+        # ## (2) make mask
+        #
+        # char = char - char.min(axis=0)
+        #
+        # mask = np.zeros(cropped.shape[:2], np.uint8)
+        # cv2.drawContours(mask, [char], -1, (255, 255, 255), -1, cv2.LINE_AA)
+        #
+        # ## (3) do bit-op
+        # char_image = cv2.bitwise_and(cropped, cropped, mask=mask)
 
         # Check about use contour
         # cv2.imshow("a", char_image)
