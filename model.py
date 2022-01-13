@@ -4,8 +4,8 @@ import sys
 import tensorflow as tf
 from tensorflow.keras import layers
 
-from models.defs import kaggle_model
-from utils.consts import IMG_SIZE
+import more_model
+from utils.consts import IMG_SIZE, num_classes, batch_size
 from utils.data_manipulators import split_and_prepare
 
 print("TensorFlow version:", tf.__version__)
@@ -13,13 +13,11 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 data_dir = "./dataset"
 
-num_classes = 7
-batch_size = 64
-
-multi_input = bool(sys.argv[0])
+multi_input = (sys.argv[0] == "True")
 
 ds = tf.data.Dataset.list_files("dataset/*/*")
 
+print(f"MultiInput={multi_input}")
 print(f"Trying to prepare {datetime.datetime.now()}")
 train_ds, val_ds = split_and_prepare(ds, multi_input=multi_input)
 print(f"Finished preparation {datetime.datetime.now()}")
@@ -30,8 +28,8 @@ print(f"Finished preparation {datetime.datetime.now()}")
 #     tf.keras.layers.Dense(num_classes,
 #                           kernel_regularizer=tf.keras.regularizers.l2(0.0001))
 # ])
-# used_model = transfer_learning.getModel()
-used_model = kaggle_model.getModel()
+used_model = more_model.getModel()
+# used_model = another_model.getModel()
 
 if multi_input:
     print("Crating model with Multiple inputs")
@@ -49,17 +47,20 @@ if multi_input:
 
 else:
     print("Crating model with just images as inputs")
-    model = used_model
-    model.add(layers.Dense(num_classes))
+    model = tf.keras.Sequential([
+        layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32, name='image'),
+        used_model,
+        layers.Dense(num_classes, activation='softmax')
+    ])
 
-# Compile and fit the model
-lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=0.1,
-    decay_steps=10000,
-    decay_rate=0.9)
+# # Compile and fit the model
+# lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+#     initial_learning_rate=0.1,
+#     decay_steps=10000,
+#     decay_rate=0.9)
 
 model.compile(
-    optimizer=tf.keras.optimizers.SGD(learning_rate=lr_schedule),
+    optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, decay=1e-6, momentum=0.9, nesterov=True),
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
     metrics=['accuracy'])
 

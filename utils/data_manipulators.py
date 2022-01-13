@@ -1,5 +1,6 @@
 import os
 
+import cv2
 import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
@@ -92,6 +93,14 @@ def split_and_prepare(ds, validation_rate=0.8, multi_input=True):
 
     return train_ds, val_ds
 
+
+def draw_and_show_char_on_image(img, char_img):
+    rounded_char = char_img.copy()
+    rounded_char = np.asarray(rounded_char, np.int32)
+    orig = cv2.polylines(img.copy(), np.asarray([rounded_char]), True, color=(0, 0, 255))
+    cv2.imshow("Image with char", orig)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 # ds = tf.data.Dataset.list_files("../dataset/*/*")
 # _, _ = split_and_prepare(ds)

@@ -1,36 +1,36 @@
-import os
+from datetime import datetime
 
 import cv2
 import h5py
 import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tensorflow.keras import layers
 
-from utils.consts import IMG_SIZE
+import more_model
+from models.defs import transfer_learning, kaggle_model
+from utils.consts import IMG_SIZE, font_dict, num_classes, batch_size
 
-os.makedirs("dataset")
-
-for i in range(7):
-    os.makedirs(f"dataset/{i}")
+#
+# os.makedirs("dataset")
+#
+# for i in range(7):
+#     os.makedirs(f"dataset/{i}")
 
 file_path = "./resources/SynthText.h5"
 db = h5py.File(file_path, 'r')
 
 im_names = list(db["data"].keys())
-font_dict = {
-    b'Raleway': 0,
-    b'Open Sans': 1,
-    b'Roboto': 2,
-    b'Ubuntu Mono': 3,
-    b'Michroma': 4,
-    b'Alex Brush': 5,
-    b'Russo One': 6
-}
 
+images = []
+chars = []
+fonts = []
+
+print(f"Preprocessing full images to chars images at {datetime.now()}")
 for index in range(973):
     # if True:
     #     index = 352
-
     im = im_names[index]
-    print(f"working on image {index} with name {im}")
 
     img = db['data'][im][:]
     font = db['data'][im].attrs['font']
@@ -41,29 +41,70 @@ for index in range(973):
 
     pts = np.swapaxes(charBB, 0, 2)
 
-    # np.where(font ,font_dict[str(font)], font)
     for idx, char in enumerate(pts):
         char_txt_val = txt[idx]
         char_font_val = font[idx]
 
         char = np.float32(np.where(char > 0, char, 0))
-        # rounded_char = char.copy()
-        # rounded_char = np.asarray(char, np.int32)
-        # orig = cv2.polylines(img.copy(), np.asarray([rounded_char]), True, color=(0, 0, 255))
+
+        # draw_and_show_char_on_image(img, char)
 
         dst = np.float32([[0, 0], [IMG_SIZE, 0], [IMG_SIZE, IMG_SIZE], [0, IMG_SIZE]])
-
         mat = cv2.getPerspectiveTransform(char, dst)
         char_image = cv2.warpPerspective(img, mat, (IMG_SIZE, IMG_SIZE))
 
-        cv2.imwrite(
-            f"./dataset/{char_font_val}/image_{index:03d}_{idx:03d}_char_{char_txt_val:03d}_font_{char_font_val}.png",
-            char_image)
+        images.append(char_image)
+        chars.append(char_txt_val)
+        fonts.append(char_font_val)
 
-    # words = np.swapaxes(np.array(wordBB, np.int32), 0, 2)
+print(f"Finished preprocessing full images to chars images at {datetime.now()}")
 
-    # print("~~~~~~~~~~~~~~~")
-    # print(words)
-    # print("~~~~~~~~~~~~~~~")
-    # for word in words:
-    #     cv2.polylines(img, np.asarray([word]), True, color=(0, 255, 0))
+# Scaling
+images = np.array(images) / 255.0
+
+train_images, test_images, train_chars, test_chars, train_fonts, test_fonts = train_test_split(np.array(images),
+                                                                                               np.array(chars),
+                                                                                               np.array(fonts),
+                                                                                               test_size=0.2)
+
+# Data augment the images
+data_augmentation = tf.keras.Sequential([
+    layers.RandomFlip("horizontal"),
+    layers.RandomRotation(0.1),
+])
+
+print(f"images amount {len(images)}")
+print(f"train_images amount {len(train_images)}")
+print(f"test_images amount {len(test_images)}")
+model = tf.keras.Sequential([
+    # data_augmentation,  # Will work just at the fit() function. No augmentation for inference stage.
+    layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32, name='image'),
+    # more_model.getModel(),
+    # transfer_learning.getModel(),
+    kaggle_model.getModel(),
+    layers.Dense(num_classes, activation='softmax')
+])
+
+model.compile(
+    optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
+    metrics=['accuracy'])
+
+# print(model.summary())
+
+model.fit(train_images,
+          train_fonts,
+          validation_data=(test_images, test_fonts),
+          batch_size=batch_size,
+          epochs=24)
+# cv2.imwrite(
+#     f"./dataset/{char_font_val}/image_{index:03d}_{idx:03d}_char_{char_txt_val:03d}_font_{char_font_val}.png",
+#     char_image)
+
+# words = np.swapaxes(np.array(wordBB, np.int32), 0, 2)
+
+# print("~~~~~~~~~~~~~~~")
+# print(words)
+# print("~~~~~~~~~~~~~~~")
+# for word in words:
+#     cv2.polylines(img, np.asarray([word]), True, color=(0, 255, 0))

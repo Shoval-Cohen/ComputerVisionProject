@@ -1,13 +1,10 @@
 import os
 
 import tensorflow as tf
+
 from utils.consts import IMG_SIZE
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
-print("TensorFlow version:", tf.__version__)
-
-num_classes = 7
 
 model = tf.keras.models.Sequential([
     # Note the input shape is the desired size of the image 28x28 with 3 bytes color
@@ -28,18 +25,11 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Dropout(0.5),
     # 512 neuron hidden layer
     tf.keras.layers.Dense(512, activation='relu'),
-    tf.keras.layers.Dense(10, activation='softmax')
 ])
 
-# dot_img_file = '../images/kaggle_font_recog.png'
-# tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
+dot_img_file = r'C:\devl\study\ComputerVisionProject\models\images\kaggle_font_recognition.png'
+tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
 
 
 def getModel():
-    model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  metrics=['accuracy'])
     return model
-
-
-getModel()
