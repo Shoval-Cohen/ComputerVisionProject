@@ -97,14 +97,4 @@ model.fit(train_images,
           validation_data=(test_images, test_fonts),
           batch_size=batch_size,
           epochs=24)
-# cv2.imwrite(
-#     f"./dataset/{char_font_val}/image_{index:03d}_{idx:03d}_char_{char_txt_val:03d}_font_{char_font_val}.png",
-#     char_image)
 
-# words = np.swapaxes(np.array(wordBB, np.int32), 0, 2)
-
-# print("~~~~~~~~~~~~~~~")
-# print(words)
-# print("~~~~~~~~~~~~~~~")
-# for word in words:
-#     cv2.polylines(img, np.asarray([word]), True, color=(0, 255, 0))

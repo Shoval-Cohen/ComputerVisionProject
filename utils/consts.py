@@ -1,6 +1,6 @@
-IMG_SIZE = 64
+IMG_SIZE = 75
 
-batch_size = 64
+batch_size = 32
 
 num_classes = 7
 

@@ -27,7 +27,6 @@ model.add(layers.Dense(512))
 model.add(layers.Activation('relu'))
 model.add(layers.Dropout(0.5))
 
-print("Building")
 # model.build(input_shape=(None, IMG_SIZE, IMG_SIZE, 3)
 
 # let's train the model using SGD + momentum (how original).
@@ -38,7 +37,6 @@ model.compile(optimizer=sgd,
               metrics=['accuracy'],
               run_eagerly=True)
 
-print("Finished")
 dot_img_file = r'C:\devl\study\ComputerVisionProject\models\images\more.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
 
