@@ -1,12 +1,15 @@
 import os
-os.makedirs("dataset")
-
-for i in range(7):
-    os.makedirs(f"dataset/{i}")
 
 import cv2
 import h5py
 import numpy as np
+
+from utils.consts import IMG_SIZE
+
+os.makedirs("dataset")
+
+for i in range(7):
+    os.makedirs(f"dataset/{i}")
 
 file_path = "./resources/SynthText.h5"
 db = h5py.File(file_path, 'r')
@@ -23,11 +26,11 @@ font_dict = {
 }
 
 for index in range(973):
-# if True:
-#     index = 352
+    # if True:
+    #     index = 352
 
     im = im_names[index]
-    # print(f"working on image {index} with name {im}")
+    print(f"working on image {index} with name {im}")
 
     img = db['data'][im][:]
     font = db['data'][im].attrs['font']
@@ -43,73 +46,19 @@ for index in range(973):
         char_txt_val = txt[idx]
         char_font_val = font[idx]
 
-        # print(f"index is {idx}")
-        char = np.float32( np.where(char > 0, char, 0))
+        char = np.float32(np.where(char > 0, char, 0))
         # rounded_char = char.copy()
         # rounded_char = np.asarray(char, np.int32)
         # orig = cv2.polylines(img.copy(), np.asarray([rounded_char]), True, color=(0, 0, 255))
 
-        dst = np.float32([[0, 0], [150, 0], [150, 150], [0, 150]])
+        dst = np.float32([[0, 0], [IMG_SIZE, 0], [IMG_SIZE, IMG_SIZE], [0, IMG_SIZE]])
 
         mat = cv2.getPerspectiveTransform(char, dst)
-        char_image = cv2.warpPerspective(img, mat, (150, 150))
+        char_image = cv2.warpPerspective(img, mat, (IMG_SIZE, IMG_SIZE))
 
-
-        # ## (1) Crop the bounding rect
-        # rect = cv2.boundingRect(char)
-        # x, y, w, h = rect
-        # cropped = img[y:y + h, x:x + w].copy()
-        #
-        # ## (2) make mask
-        #
-        # char = char - char.min(axis=0)
-        #
-        # mask = np.zeros(cropped.shape[:2], np.uint8)
-        # cv2.drawContours(mask, [char], -1, (255, 255, 255), -1, cv2.LINE_AA)
-        #
-        # ## (3) do bit-op
-        # char_image = cv2.bitwise_and(cropped, cropped, mask=mask)
-
-        # Check about use contour
-        # cv2.imshow("a", char_image)
-        # char_image = cv2.GaussianBlur(char_image, (3, 3), 1)
-        # char_image = cv2.Canny(char_image, 100, 200)
-        # char_image = cv2.resize(char_image, (char_image.shape[1] * 4, char_image.shape[0] * 4))
-
-        # Add the char letter here
-        # print(f"Image {index} letter num: {idx} with value: {chr(char_txt_val)} and font num: {char_font_val}")
-        # cv2_imshow(char_image)
         cv2.imwrite(
             f"./dataset/{char_font_val}/image_{index:03d}_{idx:03d}_char_{char_txt_val:03d}_font_{char_font_val}.png",
             char_image)
-
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
-        # ## Rotate without cutoff
-        #
-        # # calc angle
-        # x0, y0 = original_char[0]
-        # x1, y1 = original_char[1]
-        # x3, y3 = original_char[-1]
-        #
-        # cv2.circle(orig, (int(x0), int(y0)), 8, color=(0, 255, 0))
-        # cv2.circle(orig, (int(x1), int(y1)), 8, color=(0, 180, 0))
-        # cv2.circle(orig, (int(x3), int(y3)), 8, color=(0, 90, 0))
-        # cv2.imshow("original", orig)
-        #
-        # horizontal_angle = np.rad2deg(np.arctan((y1 - y0) / (x1 - x0))) if x1 != x0 else 0
-        # vertical_angle = np.rad2deg(np.arctan((x0 - x3) / (y0 - y3))) if y0 != y3 else 0
-        # print("horizontal_angle")
-        # print(horizontal_angle)
-        # print("vertical_angle")
-        # print(vertical_angle)
-        # angle = max(horizontal_angle, vertical_angle, key=abs)
-        # print("angle")
-        # print(angle)
-        #
-        # rotated = imutils.rotate_bound(char_image, angle)
-        # cv2.imshow(f"Rotated (Correct {angle})", rotated)
 
     # words = np.swapaxes(np.array(wordBB, np.int32), 0, 2)
 
