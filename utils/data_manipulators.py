@@ -160,4 +160,4 @@ def draw_and_show_char_on_image(img, char_img):
 # _, _ = split_and_prepare(ds)
 
 
-preprocess_h5_dataset(r"../resources/SynthText.h5")
+# preprocess_h5_dataset(r"../resources/SynthText.h5")
