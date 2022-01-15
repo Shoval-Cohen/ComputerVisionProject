@@ -1,4 +1,4 @@
-IMG_SIZE = 75
+IMG_SIZE = 64
 
 batch_size = 32
 
