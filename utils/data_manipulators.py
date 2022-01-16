@@ -10,12 +10,12 @@ from tensorflow.keras import layers
 
 from utils.consts import IMG_SIZE, font_dict
 
-tf.compat.v1.enable_eager_execution()
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 AUTOTUNE = tf.data.AUTOTUNE
 
 
-def preprocess_h5_dataset(file_path):
+def preprocess_h5_dataset(file_path, is_training=True):
     db = h5py.File(file_path, 'r')
 
     im_names = list(db["data"].keys())
@@ -28,15 +28,16 @@ def preprocess_h5_dataset(file_path):
 
     start_time = datetime.now()
     print(f"Preprocessing full images to chars images at {start_time}")
-    for index in range(973):
+    for index in range(len(list(db["data"].keys()))):
         # if True:
         #     index = 352
         im = im_names[index]
 
         img = db['data'][im][:]
-        font = db['data'][im].attrs['font']
-        font = (list(map(lambda x: font_dict[x], font)))
-        fonts.extend(font)
+        if is_training:
+            font = db['data'][im].attrs['font']
+            font = (list(map(lambda x: font_dict[x], font)))
+            fonts.extend(font)
         txt = db['data'][im].attrs['txt']
         words.extend(txt)
         images_chars = b''.join(txt)
