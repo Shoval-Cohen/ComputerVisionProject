@@ -1,19 +1,24 @@
 import csv
+import os
 
 import numpy as np
 from keras.utils.np_utils import to_categorical
+from sklearn.metrics import confusion_matrix, accuracy_score
 from tensorflow import keras
+from matplotlib import pyplot as plt
 
-from utils.consts import num_classes
-from utils.data_manipulators import preprocess_h5_dataset
-import os
+from sklearn.metrics import ConfusionMatrixDisplay
+
+from utils.consts import num_classes, font_dict
+from utils.data_manipulations import preprocess_h5_dataset
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
+file_path = "resources/SynthText.h5"
 
-file_path = "resources/SynthText_test.h5"
+is_training = True
 
-chars_images, chars, _, words, big_img_names = preprocess_h5_dataset(file_path, is_training=False)
+chars_images, chars, fonts, words, big_img_names = preprocess_h5_dataset(file_path, is_training=is_training)
 
 print("Predicting")
 model = keras.models.load_model('saved_model_0.h5')
@@ -32,12 +37,21 @@ for word in words:
     selected_fonts[idx:idx + len(word)] = np.argmax(word_font_votes)
     idx += len(word)
 
-with open(f'test_results_0.csv', 'w', newline='') as csv_file:
-    writer = csv.writer(csv_file, delimiter=',')
-    writer.writerow([" ", "image", "char", "b'Raleway", "b'Open Sans", "b'Roboto", "b'Ubuntu Mono", "b'Michroma",
-                     "b'Alex Brush", "b'Russo One"])
-    for row_index in range(chars_amount):
-        row = [row_index, big_img_names[row_index], chr(chars[row_index])]
-        row.extend(np.int32(to_categorical(selected_fonts[row_index], num_classes=num_classes)))
-        print(row)
-        writer.writerow(row)
+# with open(f'test_results_0.csv', 'w', newline='') as csv_file:
+#     writer = csv.writer(csv_file, delimiter=',')
+#     writer.writerow([" ", "image", "char", "b'Raleway", "b'Open Sans", "b'Roboto", "b'Ubuntu Mono", "b'Michroma",
+#                      "b'Alex Brush", "b'Russo One"])
+#     for row_index in range(chars_amount):
+#         row = [row_index, big_img_names[row_index], chr(chars[row_index])]
+#         row.extend(np.int32(to_categorical(selected_fonts[row_index], num_classes=num_classes)))
+#         print(row)
+#         writer.writerow(row)
+
+if is_training:
+    print(accuracy_score(fonts, selected_fonts))
+    print(confusion_matrix(fonts, selected_fonts))
+    ConfusionMatrixDisplay.from_predictions(fonts,
+                                            selected_fonts,
+                                            display_labels=[fnt.decode("utf8") for fnt in font_dict.keys()])
+    plt.xticks(rotation=90)
+    plt.show()
