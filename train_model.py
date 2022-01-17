@@ -18,7 +18,7 @@ images = np.array(images) / 255.0
 model = tf.keras.Sequential([
     layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32, name='image', ),
 
-    layers.Conv2D(64, (3, 3), activation='relu', input_shape=(IMG_SIZE, IMG_SIZE, 3)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
     layers.MaxPooling2D(2, 2),
 
     layers.Conv2D(128, (3, 3), activation='relu'),
@@ -56,8 +56,8 @@ callbacks = [TensorBoard(log_dir=log_folder,
                          profile_batch=2,
                          embeddings_freq=1)]
 
-model.fit(images,
-          fonts,
+model.fit(np.array(images),
+          np.array(fonts),
           batch_size=batch_size,
           epochs=25,
           callbacks=callbacks)

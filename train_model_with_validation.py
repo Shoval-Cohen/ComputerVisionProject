@@ -34,6 +34,9 @@ model = tf.keras.Sequential([
     layers.Conv2D(128, (3, 3), activation='relu'),
     layers.MaxPooling2D(2, 2),
 
+    # Flatten the results to feed into a DNN
+    layers.Flatten(),
+    layers.Dropout(0.5),
     layers.Dense(512, activation='relu'),
     layers.Dropout(0.5),
     layers.Dense(256, activation='relu'),
