@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import TensorBoard
 from utils.consts import IMG_SIZE, num_classes, batch_size
 from utils.data_manipulations import preprocess_h5_dataset
 
-file_path = "./resources/SynthText.h5"
+file_path = "../resources/SynthText.h5"
 
 images, chars, fonts, _, _ = preprocess_h5_dataset(file_path)
 
@@ -38,7 +38,7 @@ model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, decay=1e-6, 
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
               metrics=['accuracy'])
 
-dot_img_file = r'models\images\model.png'
+dot_img_file = r'../models/images/model.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True)
 
 print(model.summary())
@@ -47,7 +47,7 @@ start_time = datetime.now()
 print(f"Starting training at {start_time}")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`")
 
-log_folder = "logs/Basic/FinalModel/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+log_folder = "../logs/Basic/FinalModel/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 callbacks = [TensorBoard(log_dir=log_folder,
                          histogram_freq=1,
                          write_graph=True,
@@ -64,4 +64,4 @@ model.fit(np.array(images),
 
 print(f"Finished training at {(datetime.now() - start_time).total_seconds()}")
 
-model.save("saved_model_with_validation.h5")
+model.save("../resources/saved_model.h5")

@@ -1,11 +1,7 @@
-import os
-
 import tensorflow as tf
 from tensorflow.keras import Sequential, layers
 
 from utils.consts import IMG_SIZE, num_classes
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 basic_model = Sequential([
     layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32, name='image', ),

@@ -14,17 +14,23 @@ from utils.data_manipulations import preprocess_h5_dataset
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-file_path = "resources/SynthText.h5"
+file_path = "../resources/SynthText_test.h5"
 
-is_training = True
+is_training = False
 
 chars_images, chars, fonts, words, txt_img_names = preprocess_h5_dataset(file_path, is_training=is_training)
 
-print("Predicting")
-model = keras.models.load_model('saved_model_with_validation.h5')
+model = keras.models.load_model('../resources/saved_multi_input_model.h5')
 
 chars_amount = len(chars)
-predicted_fonts_proba = model.predict(np.array(chars_images))
+
+start_time = datetime.now()
+print(f"Starting prediction at {start_time}")
+
+predicted_fonts_proba = model.predict([np.array(chars_images), np.array(chars)])
+
+print(f"Finished prediction at {datetime.now()}",
+      f"Took {(datetime.now() - start_time).total_seconds()}s")
 
 selected_fonts = np.zeros(chars_amount)
 
@@ -37,7 +43,7 @@ for word in words:
     selected_fonts[idx:idx + len(word)] = np.argmax(word_font_votes)
     idx += len(word)
 
-result_file = "results_with_validation.csv"
+result_file = "results_multi_input.csv"
 start_time = datetime.now()
 
 print(f"Starting to write the results to {result_file} at {start_time}")
@@ -53,11 +59,14 @@ print(f"Finished to write the results to {result_file} at {datetime.now()}",
       f"Took {(datetime.now() - start_time).total_seconds()}s")
 
 if is_training:
+    print("Accuracy:")
     print(accuracy_score(fonts, selected_fonts))
+    print("Confusion Matrix:")
     print(confusion_matrix(fonts, selected_fonts))
     ConfusionMatrixDisplay.from_predictions(fonts,
                                             selected_fonts,
                                             display_labels=[fnt.decode("utf8") for fnt in font_dict.keys()])
-    plt.title(accuracy_score(fonts, selected_fonts))
+    acc_percents = accuracy_score(fonts, selected_fonts) * 100
+    plt.title(f"Accuracy: {acc_percents:.2f}%")
     plt.xticks(rotation=90)
     plt.show()

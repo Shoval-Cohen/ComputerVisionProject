@@ -20,7 +20,7 @@ def preprocess_h5_dataset(file_path, is_training=True):
     im_names = list(db["data"].keys())
 
     start_time = datetime.now()
-    print(f"Preprocessing full images to chars images at {start_time}")
+    print(f"Preprocessing {len(im_names)} full images to chars images at {start_time}")
     for index in range(len(list(db["data"].keys()))):
 
         image_name = im_names[index]
@@ -31,9 +31,9 @@ def preprocess_h5_dataset(file_path, is_training=True):
         words.extend(txt)
         images_chars = b''.join(txt)
         chars.extend(images_chars)
-        char_BB = db['data'][image_name].attrs['charBB']
+        char_bb = db['data'][image_name].attrs['charBB']
 
-        char_pts = np.swapaxes(char_BB, 0, 2)
+        char_pts = np.swapaxes(char_bb, 0, 2)
 
         for char in char_pts:
             char = np.float32(np.where(char > 0, char, 0))
@@ -51,7 +51,7 @@ def preprocess_h5_dataset(file_path, is_training=True):
             fonts.extend(font)
 
     print(
-        f"Finished preprocessing full images to chars images at {datetime.now()}.",
+        f"Finished preprocessing {len(im_names)} full images to chars images at {datetime.now()}.",
         f"Took: {(datetime.now() - start_time).total_seconds()}"
     )
 
