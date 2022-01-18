@@ -82,4 +82,4 @@ model.fit([train_images, train_chars],
 
 print(f"Finished training at {(datetime.now() - start_time).total_seconds()}")
 
-model.save("multi_input_saved_model.h5")
+model.save("saved_multi_input_model.h5")
