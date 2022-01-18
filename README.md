@@ -20,7 +20,7 @@ The trained model should be at the `resources` directory.
 To test the model on dataset, change the `file_path` variable at the file `test/test_model.py` to the `h5` test dataset
 file and run it.
 
-Trained model can be found in [here](https://365openu-my.sharepoint.com/:u:/g/personal/coshova5_365_openu_ac_il/EaA5Gpvca3VBonMGVfVzgcEBq_Pr5Pn5qSZvN0oTw0TkUA?e=sbQnBk)
+Trained model can be found in [here](https://365openu-my.sharepoint.com/:u:/g/personal/coshova5_365_openu_ac_il/EaA5Gpvca3VBonMGVfVzgcEBq_Pr5Pn5qSZvN0oTw0TkUA?e=rCQ6U9)
 
 For this trained model and other ones see [full directory](https://365openu-my.sharepoint.com/:f:/g/personal/coshova5_365_openu_ac_il/EgaMxEOzuMxJoIeD4vdnTeABFxb_BltHp5u98gUQuDT_OQ?e=Vp4gxJ)
 
