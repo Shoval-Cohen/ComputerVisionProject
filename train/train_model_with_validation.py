@@ -75,4 +75,4 @@ model.fit(train_images,
 
 print(f"Finished training at {(datetime.now() - start_time).total_seconds()}")
 
-model.save("../resources/saved_model.h5")
+model.save("../resources/saved_model_with_validation.h5")
