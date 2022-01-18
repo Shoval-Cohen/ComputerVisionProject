@@ -43,7 +43,7 @@ for word in words:
     selected_fonts[idx:idx + len(word)] = np.argmax(word_font_votes)
     idx += len(word)
 
-result_file = "results_multi_input.csv"
+result_file = "../results_multi_input.csv"
 start_time = datetime.now()
 
 print(f"Starting to write the results to {result_file} at {start_time}")
